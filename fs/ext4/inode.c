@@ -390,6 +390,21 @@ static int __check_block_validity(struct inode *inode, const char *func,
 	return 0;
 }
 
+int ext4_issue_zeroout(struct inode *inode, ext4_lblk_t lblk, ext4_fsblk_t pblk,
+		       ext4_lblk_t len)
+{
+	int ret;
+
+	if (ext4_encrypted_inode(inode))
+		return ext4_encrypted_zeroout(inode, lblk, pblk, len);
+
+	ret = sb_issue_zeroout(inode->i_sb, pblk, len, GFP_NOFS);
+	if (ret > 0)
+		ret = 0;
+
+	return ret;
+}
+
 #define check_block_validity(inode, map)	\
 	__check_block_validity((inode), __func__, __LINE__, (map))
 
@@ -4487,6 +4502,7 @@ struct inode *ext4_iget(struct super_block *sb, unsigned long ino)
 			inode->i_op = &ext4_symlink_inode_operations;
 			ext4_set_aops(inode);
 		}
+		inode_nohighmem(inode);
 	} else if (S_ISCHR(inode->i_mode) || S_ISBLK(inode->i_mode) ||
 	      S_ISFIFO(inode->i_mode) || S_ISSOCK(inode->i_mode)) {
 		inode->i_op = &ext4_special_inode_operations;

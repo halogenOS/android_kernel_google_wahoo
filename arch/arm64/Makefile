@@ -38,8 +38,11 @@ KBUILD_CFLAGS	+= $(call cc-option,-march=armv8-a+crypto+crc,) $(call cc-option,-
 
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS	+= -DCONFIG_ARCH_SUPPORTS_INT128
+KBUILD_CFLAGS	+= $(call clang-ifversion, -ge, 0600, -mgeneral-regs-only, -mno-implicit-float)
+else
+KBUILD_CFLAGS	+= -mgeneral-regs-only
 endif
-KBUILD_CFLAGS	+= -mgeneral-regs-only $(lseinstr)
+KBUILD_CFLAGS	+= $(lseinstr)
 KBUILD_CFLAGS	+= -fno-pic
 KBUILD_CFLAGS	+= $(call cc-option, -mpc-relative-literal-loads)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
