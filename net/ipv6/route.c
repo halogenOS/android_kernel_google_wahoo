@@ -391,14 +391,11 @@ static void ip6_dst_ifdown(struct dst_entry *dst, struct net_device *dev,
 	struct net_device *loopback_dev =
 		dev_net(dev)->loopback_dev;
 
-	if (dev != loopback_dev) {
-		if (idev && idev->dev == dev) {
-			struct inet6_dev *loopback_idev =
-				in6_dev_get(loopback_dev);
-			if (loopback_idev) {
-				rt->rt6i_idev = loopback_idev;
-				in6_dev_put(idev);
-			}
+	if (idev && idev->dev != loopback_dev) {
+		struct inet6_dev *loopback_idev = in6_dev_get(loopback_dev);
+		if (loopback_idev) {
+			rt->rt6i_idev = loopback_idev;
+			in6_dev_put(idev);
 		}
 	}
 }
@@ -846,6 +843,9 @@ static struct rt6_info *ip6_pol_route_lookup(struct net *net,
 {
 	struct fib6_node *fn;
 	struct rt6_info *rt;
+
+	if (fl6->flowi6_flags & FLOWI_FLAG_SKIP_NH_OIF)
+		flags &= ~RT6_LOOKUP_F_IFACE;
 
 	read_lock_bh(&table->tb6_lock);
 	fn = fib6_lookup(&table->tb6_root, &fl6->daddr, &fl6->saddr);
